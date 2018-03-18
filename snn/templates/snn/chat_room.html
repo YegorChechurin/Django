@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>{{username}} chat room</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'snn/css/chat_room.css' %}" />
+</head>
+<body>
+	<header>
+		<nav class="navbar navbar-default navbar-fixed-top" style="background: linear-gradient(to bottom, #33ccff 0%, #ff99cc 100%); height: 5%;">
+		    <div class="container-fluid">
+			    <div class="navbar-header">
+				    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+					    <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span> 
+					</button>
+					<a class="navbar-brand" href="{% url 'snn:profile_page' user_id %}">{{username}}</a>
+				</div>
+				<div class="collapse navbar-collapse" id="myNavbar">
+					<ul class="nav navbar-nav navbar-right">
+					    <li><a href="#"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+	</header>
+    <div class="container-fluid" style="margin-top:50px">
+    	<div class="row">
+    		<div class="col-sm-3">
+    			<div id="chats_wrapper"></div>
+    		</div>
+    		<div class="col-sm-6" id="mes" style="height: 370px">
+    		</div>
+    		<div class="col-sm-3" id="sidebar">
+                <div style="text-align: center; padding-top:5%">
+		            If you would like to chat to someone with whom you do not have an active chat yet, then please go to your profile page by clicking your username in the left uppermost corner of the page, and then select that person from your friend list.
+		        </div>
+           </div> 
+    	</div>
+    	<div class="row">
+		    <div class="col-sm-6 col-sm-offset-3">
+				<textarea class="form-control" rows="4" id="text" form="message" name="message" placeholder="Type your message here:"></textarea>
+                <button type="button" class="btn btn-info" onclick="send_message()">Send</button>
+		    </div>
+	    </div>
+    </div>
+</body>
+<script type="text/javascript">
+	var mes_height = $("#mes").outerHeight(); 
+	var n; // message counter reflected in message html id
+	var id = {{partner_id}};
+	var name = "{{partner_name}}";
+	var user_id = {{user_id}};
+	var user_name = "{{username}}";
+	var chats= {{chats}};
+	var last_rec_mes_id = {{last_rec_mes_id}};
+	var test;
+
+	$(document).ready(form_chats(),display_chat(id,name));
+
+	function form_chat_header(chat) {
+		if (chat.partner_id==id) {
+			var content = '<div class="active_chat_header" id="c'+chat.partner_id+'" onclick="display_chat('+chat.partner_id+')">'+'<b>'+chat.partner_name+'</b><br>'+chat.last_mes_auth_name+': '+chat.last_mes_text+'</div>';
+			$("#chats_wrapper").append(content);
+		} else {
+			name = chat.partner_name;
+			var content = '<div class="chat_header" id="c'+chat.partner_id+'" onclick="display_chat('+chat.partner_id+')">'+'<b>'+chat.partner_name+'</b><br>'+chat.last_mes_auth_name+': '+chat.last_mes_text+'</div>';
+			$("#chats_wrapper").append(content);
+		}
+	}
+
+	function form_chats() {
+        $.get('{% url 'snn:chats_giver' %}',{user_id:user_id}, 
+        	function(data, status){
+                if (status=="success") {
+                	chats = JSON.parse(data);
+                    $("#chats_wrapper").html('');
+                    chats.forEach(form_chat_header);
+                }
+            }
+        );
+	}
+
+	function display_message(message) {
+		if (message.sender_id==id || message.recipient_id==id) {
+			n++;
+		    if (message.sender_id == user_id) {
+			    var content = '<div class="message_outlet" id="m'+n+'"><b>You:</b> '+message.message+'</div><br>';
+			    $("#mes").append(content);
+		    } else {
+                var content = '<div class="message_inlet" id="m'+n+'"><b>'+message.sender_name+':</b> '+message.message+'</div><br>';
+                $("#mes").append(content);
+		    }
+            var last_mes_pos = document.getElementById("m"+n).offsetTop;
+            if (last_mes_pos > mes_height) {
+                document.getElementById("mes").scrollTop = last_mes_pos; 
+            }
+		} else {
+			alert("You received new message from "+message.sender_name);
+		}
+	} 
+
+	function display_chat(partner_id) { 
+		n = 0;
+	    id = partner_id;  
+        $.get('{% url 'snn:chat_fetcher' %}',{user_id:user_id, partner_id:id}, 
+        	function(data, status){
+                if (status=="success") {
+                	$("#mes").html('')
+                	var messages = JSON.parse(data);
+                    messages.forEach(display_message);
+                }
+            }
+        );
+        chats.forEach(function(item){
+        	if (item.partner_id==id) {
+        		$("#c"+id).attr("class","active_chat_header");
+        	} else {
+        		$("#c"+item.partner_id).attr("class","chat_header");
+        	}
+        });
+    }
+
+    function send_message() {
+        var message = $("#text").val();
+        $.get('{% url 'snn:message_sender' %}',{user_id:user_id, user_name:user_name, partner_id:id, message:message}, 
+        	function(data, status){
+                if (status=="success") {
+                	n++;
+                	var content = '<div class="message_outlet" id="m'+n+'"><b>You:</b> '+message+'</div><br>';
+                	$("#mes").append(content);
+                	var last_mes_pos = document.getElementById("m"+n).offsetTop;
+                    if (last_mes_pos > mes_height) {
+                        document.getElementById("mes").scrollTop = last_mes_pos; 
+                    }
+                    $("#text").val('');
+                }
+            }
+        );
+    }
+
+    function messages_listener() {
+    	$.get('{% url 'snn:messages_giver' %}',{user_id:user_id, mes_id:last_rec_mes_id}, 
+        	function(data, status){
+                if (status=="success") {
+                	var messages = JSON.parse(data);
+                	var last_index = messages.length;
+        			last_rec_mes_id = messages[last_index-1].message_id;
+        			messages.forEach(display_message);
+                }
+            }
+        );
+    }
+     
+    setInterval(messages_listener, 3000);
+    setInterval(form_chats, 3000);
+</script>
+</html>
