@@ -1,0 +1,20 @@
+h1 {
+text-align: center;
+} 
+
+#chat {
+border-right: 1px solid black; 
+overflow: auto;
+height: 70%;
+}
+		
+#inventory {
+border-right: 1px solid black; 
+overflow: auto;
+height: 70%;
+}
+
+#money {
+overflow: auto;
+height: 70%;
+}
