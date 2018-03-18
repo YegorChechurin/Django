@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>{{username}} profile page</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'snn/css/profile_page.css' %}" />
+</head>
+<body>
+	<header>
+		<nav class="navbar navbar-default navbar-fixed-top" style="background: linear-gradient(to bottom, #33ccff 0%, #ff99cc 100%); height: 5%;">
+		    <div class="container-fluid">
+			    <div class="navbar-header">
+				    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+					    <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span> 
+					</button>
+					<a class="navbar-brand" href="{% url 'snn:profile_page' user_id %}">{{username}}</a>
+				</div>
+				<div class="collapse navbar-collapse" id="myNavbar">
+					<ul class="nav navbar-nav navbar-right">
+					    <li><a href="#"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+	</header>
+    <div class="container-fluid" style="margin-top:50px">
+    	<div class="row">
+    		<div class="col-sm-4">
+    			<div><h1>Your friends</h1></div>
+    			<div id="chat" style="text-align:center">
+    				{% if not fr_info %}
+    				    You have no friends! 
+    				    In Social Nano Network you can send messages only to friends. So first add some friends <strong>&#x21E8;</strong> 
+    				{% else %}
+    				    {% for fr in fr_info %}
+    				        <form method="post" action="{% url 'snn:chat_room' user_id %}">
+    				        	{% csrf_token %}
+                                <div><strong>{{fr.name}}</strong></div>
+                                <input type="hidden" name="fr_id" value="{{fr.id}}">
+                                <input type="hidden" name="fr_name" value="{{fr.name}}">
+                                <input type="submit" value="Go and chat with {{fr.name}}" class="btn btn-primary">
+    				        </form>
+    				        <br>
+    			        {% endfor %}
+    				{% endif %}
+    			</div>
+    		</div>
+    		<div class="col-sm-5">
+    			<div><h1>List of network members</h1></div>
+    			<div id="inventory" style="text-align:center">
+    				{% for member in members %}
+    				    <form method="post" action="{% url 'snn:add_remove_friends' user_id %}">
+    				    	{% csrf_token %}
+    				    	<div><strong>{{member.username}}</strong></div>
+    				    	<input type="hidden" name="member_id" value="{{member.user_id}}">
+    				    	{% if not member.user_id in fr_IDs %}
+    				    	    <input type="hidden" name="action" value="add">
+                                <input type="submit" value="Add to friends" class="btn btn-primary">
+    				    	{% else %}
+    				    	    <input type="hidden" name="action" value="remove">
+    				    	    <input type="submit" value="Remove from friends" class="btn btn-primary">
+    				    	{% endif %}
+    				    </form>
+    				    <br>
+    				{% endfor %}
+    			</div>
+    		</div>
+    		<div class="col-sm-3">
+                <div><h1>Advertisments</h1></div>
+                <div id="money" style="text-align: center;">
+                    Your advertisment could be here. Hurry up, because soon Social Nano Network will become so popular! 
+                </div>
+           </div> 
+    	</div>
+    </div>
+</body>
+<script type="text/javascript">
+	var last_friendship_id = {{last_friendship_id}}
+	function catch_friends() {
+		$.get('{% url 'snn:catch_friends' %}',{user_id:{{user_id}}, id:last_friendship_id}, 
+			function(data, status){
+                if (status=="success") {
+                	var last_friendship_id_update = data;
+                	if (last_friendship_id_update > last_friendship_id) {
+                		last_friendship_id = last_friendship_id_update;
+                		alert("Congratulations! Someone has just added you to their friend list!")
+                		location.reload();
+                	} else {
+                		last_friendship_id = last_friendship_id_update;
+                		alert("So sad... Someone has just removed you from their friend list...")
+                		location.reload();
+                	}
+                }
+            }
+        );
+	}
+	setInterval(catch_friends, 3000);
+</script>
+</html>
