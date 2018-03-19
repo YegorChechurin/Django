@@ -10,7 +10,7 @@ from django.db.models import Q
 from .models import Users, Friends, Messages, Chats
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+    pass
 
 def profile_page(request,user_id):
 	user = Users.objects.get(pk=user_id)
